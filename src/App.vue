@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import FormatBar from './components/FormatBar.vue'
 import ExportButtons from './components/ExportButtons.vue'
+import HistoryButtons from './components/HistoryButtons.vue'
 import ImportImage from './components/ImportImage.vue'
 import EventsPanel from './components/EventsPanel.vue'
 import LayersPanel from './components/LayersPanel.vue'
@@ -16,6 +17,7 @@ const editor = useEditor()
     <header class="header">
       <h1>Éditeur de template</h1>
       <FormatBar />
+      <HistoryButtons />
       <ExportButtons />
     </header>
     <aside class="column left">

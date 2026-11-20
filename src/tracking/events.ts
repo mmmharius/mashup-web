@@ -10,6 +10,8 @@ export interface Events {
   text_added: { layer_count: number }
   /** Sent once typing has stopped, with the list of settings touched. */
   text_edited: { fields: string }
+  /** Undo or redo: many undos point to an interface that trips users up. */
+  history_used: { direction: 'undo' | 'redo' }
   layer_deleted: { type: 'image' | 'text' | 'main' }
   export_succeeded: {
     mode: ExportMode

@@ -18,6 +18,7 @@ export function editorTracking({ store }: PiniaPluginContext) {
 
   editor.$onAction(({ name, args, after }) => {
     const previousFormat = editor.format
+    const stepsBefore = editor.past.length
     const hadMain = !!editor.main
     const removedType =
       name === 'remove'
@@ -50,6 +51,12 @@ export function editorTracking({ store }: PiniaPluginContext) {
             track('text_edited', { fields: [...touchedFields].sort().join(',') })
             touchedFields.clear()
           }, TYPING_DELAY)
+          return
+        case 'undo':
+          if (editor.past.length < stepsBefore) track('history_used', { direction: 'undo' })
+          return
+        case 'redo':
+          if (editor.past.length > stepsBefore) track('history_used', { direction: 'redo' })
           return
         case 'remove':
           if (removedType) track('layer_deleted', { type: removedType })
