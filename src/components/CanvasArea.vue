@@ -14,7 +14,11 @@ const observer = new ResizeObserver(([entry]) => {
   available.width = entry.contentRect.width
   available.height = entry.contentRect.height
 })
-const scale = computed(() => displayScale(editor.size, available))
+// margin around the visual, to see the handles and whatever overflows
+const MARGIN = 56
+const scale = computed(() =>
+  displayScale(editor.size, { width: available.width - 2 * MARGIN, height: available.height - 2 * MARGIN }),
+)
 
 const canvasElement = ref<HTMLCanvasElement>()
 
@@ -23,7 +27,7 @@ onMounted(() => {
   const fabric = createScene(canvasElement.value!, editor)
   scene.value = fabric
   // the store is in charge: every state change is copied into Fabric
-  watchEffect(() => fabric.resizeView(editor.size, scale.value))
+  watchEffect(() => fabric.resizeView(editor.size, { ...available }, scale.value))
   watchEffect(() => fabric.sync())
   window.addEventListener('keydown', onKeydown)
 })
@@ -58,20 +62,15 @@ function onKeydown(event: KeyboardEvent) {
   moveWithKeyboard(event)
   if (event.key !== 'Delete' && event.key !== 'Backspace') return
   // a slider or a checkbox keeps focus after use: only a text field blocks the key
-  const typing = (event.target as HTMLElement).closest('textarea')
+  const typing = (event.target as HTMLElement).closest('textarea, input[type=number]')
   if (typing || !editor.selectionId) return
   event.preventDefault()
   editor.remove(editor.selectionId)
 }
-
-/** A click around the canvas, in the grey area, deselects the layer. */
-function clickAround(event: MouseEvent) {
-  if (!(event.target as HTMLElement).closest('.canvas-container')) editor.select(null)
-}
 </script>
 
 <template>
-  <div class="frame" @mousedown="clickAround">
+  <div class="frame">
     <div ref="zone" class="zone">
       <canvas ref="canvasElement" aria-label="Aperçu du visuel" />
     </div>
@@ -88,24 +87,24 @@ function clickAround(event: MouseEvent) {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 24px 24px 8px;
+  padding-bottom: 8px;
 }
 
 .zone {
   flex: 1;
   min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Fabric wraps the canvas in this container */
+/* Fabric wraps the canvas in this container: taken out of the flow, it does not affect the size of the area */
 .zone :deep(.canvas-container) {
-  box-shadow: 0 4px 24px rgb(0 0 0 / 0.15);
+  position: absolute !important;
+  inset: 0;
 }
 
 .caption {
-  margin: 8px 0 0;
+  margin: 0;
   text-align: center;
   color: var(--muted);
 }

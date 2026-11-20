@@ -1,4 +1,4 @@
-import { Canvas, FabricImage, type FabricObject, IText } from 'fabric'
+import { Canvas, FabricImage, type FabricObject, IText, Rect } from 'fabric'
 import type { useEditor } from '../stores/editor'
 import type { Layer } from './layers'
 import type { Size } from './formats'
@@ -86,12 +86,37 @@ function shortAngle(angle: number): number {
  */
 export function createScene(element: HTMLCanvasElement, editor: Editor) {
   const canvas = new Canvas(element, {
-    backgroundColor: '#ffffff',
     // a selected layer keeps its place in the stack
     preserveObjectStacking: true,
     // no multi-selection lasso
     selection: false,
   })
+  // the visual background: a rectangle at the very bottom of the stack, neither selectable nor movable
+  const background = new Rect({ originX: 'left', originY: 'top', left: 0, top: 0, selectable: false, evented: false })
+  canvas.add(background)
+  let visual: Size = { width: 0, height: 0 }
+  let exporting = false
+
+  // the canvas covers the whole workspace: whatever overflows the visual stays visible but dimmed,
+  // and the handles are never cut off by the edge
+  canvas.on('after:render', ({ ctx }) => {
+    if (exporting) return
+    const [scale, , , , left, top] = canvas.viewportTransform
+    const density = canvas.getRetinaScaling()
+    ctx.save()
+    ctx.setTransform(density, 0, 0, density, 0, 0)
+    ctx.beginPath()
+    ctx.rect(0, 0, canvas.width, canvas.height)
+    ctx.rect(left, top, visual.width * scale, visual.height * scale)
+    ctx.fillStyle = 'rgb(243 244 247 / 0.8)'
+    ctx.fill('evenodd')
+    ctx.strokeStyle = '#c3c8d6'
+    ctx.strokeRect(left, top, visual.width * scale, visual.height * scale)
+    ctx.restore()
+    // the handles are drawn again on top of the dimming
+    canvas.drawControls(ctx)
+  })
+
   const objects = new Map<string, FabricObject>()
   const ids = new WeakMap<FabricObject, string>()
 
@@ -154,8 +179,11 @@ export function createScene(element: HTMLCanvasElement, editor: Editor) {
           if (object.get(key) !== value) object.set(key, value)
         }
         object.setCoords()
-        canvas.moveObjectTo(object, index)
+        // index 0: the background
+        canvas.moveObjectTo(object, index + 1)
       })
+
+      background.set({ width: editor.size.width, height: editor.size.height, fill: editor.background })
 
       const wanted = editor.selectionId ? objects.get(editor.selectionId) : undefined
       if (canvas.getActiveObject() !== wanted) {
@@ -165,23 +193,33 @@ export function createScene(element: HTMLCanvasElement, editor: Editor) {
       canvas.requestRenderAll()
     },
 
-    /** Shows the canvas scaled down on screen: layers stay in export pixels. */
-    resizeView(size: Size, scale: number) {
-      canvas.setDimensions({ width: size.width * scale, height: size.height * scale })
-      canvas.setZoom(scale)
+    /** Centers the scaled-down visual in the workspace: layers stay in export pixels. */
+    resizeView(size: Size, available: Size, scale: number) {
+      visual = size
+      canvas.setDimensions({ width: available.width, height: available.height })
+      canvas.setViewportTransform([
+        scale,
+        0,
+        0,
+        scale,
+        (available.width - size.width * scale) / 2,
+        (available.height - size.height * scale) / 2,
+      ])
     },
 
-    /** Renders the visual at its exact export size, without the selection handles. */
+    /** Renders the visual alone, at its exact export size, without dimming or handles. */
     render(size: Size): HTMLCanvasElement {
-      const zoom = canvas.getZoom()
+      const view = canvas.viewportTransform
       const display = { width: canvas.width, height: canvas.height }
+      exporting = true
       canvas.setDimensions({ width: size.width, height: size.height })
-      canvas.setZoom(1)
+      canvas.setViewportTransform([1, 0, 0, 1, 0, 0])
       try {
         return canvas.toCanvasElement()
       } finally {
+        exporting = false
         canvas.setDimensions(display)
-        canvas.setZoom(zoom)
+        canvas.setViewportTransform(view)
       }
     },
 

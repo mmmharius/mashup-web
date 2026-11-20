@@ -10,8 +10,7 @@ const stack = computed(() => [...editor.layers].reverse())
 </script>
 
 <template>
-  <p v-if="!stack.length && !editor.main" class="empty">Aucun calque pour l'instant.</p>
-  <ul v-else>
+  <ul>
     <li v-for="(layer, index) in stack" :key="layer.id" :class="{ active: layer.id === editor.selectionId }">
       <button class="name" @click="editor.select(layer.id)">{{ layerName(layer) }}</button>
       <button title="Monter" aria-label="Monter" :disabled="index === 0" @click="editor.reorder(layer.id, 1)">
@@ -34,6 +33,17 @@ const stack = computed(() => [...editor.layers].reverse())
       <button title="Supprimer" aria-label="Supprimer" @click="editor.remove(editor.main.id)">
         ✕
       </button>
+    </li>
+    <li class="background">
+      <label>
+        Fond
+        <input
+          type="color"
+          :value="editor.background"
+          aria-label="Couleur du fond"
+          @input="editor.setBackground(($event.target as HTMLInputElement).value)"
+        />
+      </label>
     </li>
   </ul>
 </template>
@@ -71,7 +81,20 @@ li button {
   text-align: left;
 }
 
-.empty {
-  color: var(--muted);
+.background label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+}
+
+.background input {
+  width: 36px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: none;
 }
 </style>

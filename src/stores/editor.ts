@@ -29,6 +29,7 @@ async function imageLayer(file: File, id: string): Promise<ImageLayer> {
 /** State restored by undo / redo. The selection is not part of it. */
 interface Snapshot {
   format: Format
+  background: string
   main: ImageLayer | null
   layers: Layer[]
 }
@@ -42,6 +43,8 @@ let lastTime = 0
 export const useEditor = defineStore('editor', {
   state: () => ({
     format: 'auto' as Format,
+    /** Canvas background color, visible wherever the main image does not cover. */
+    background: '#ffffff',
     main: null as ImageLayer | null,
     /** Layers placed over the main image, bottom to top. */
     layers: [] as Layer[],
@@ -64,6 +67,11 @@ export const useEditor = defineStore('editor', {
       if (format === this.format) return
       this.remember()
       this.resize(() => (this.format = format))
+    },
+
+    setBackground(color: string) {
+      this.remember('background')
+      this.background = color
     },
 
     async importMain(file: File) {
@@ -196,6 +204,7 @@ export const useEditor = defineStore('editor', {
     snapshot(): Snapshot {
       return {
         format: this.format,
+        background: this.background,
         main: this.main && { ...this.main },
         layers: this.layers.map((layer) => ({ ...layer })),
       }
