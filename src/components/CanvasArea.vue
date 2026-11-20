@@ -25,12 +25,23 @@ onMounted(() => {
   // the store is in charge: every state change is copied into Fabric
   watchEffect(() => fabric.resizeView(editor.size, scale.value))
   watchEffect(() => fabric.sync())
+  window.addEventListener('keydown', onKeydown)
 })
 
 onBeforeUnmount(() => {
   observer.disconnect()
+  window.removeEventListener('keydown', onKeydown)
   scene?.destroy()
 })
+
+/** Delete or Backspace removes the selected layer, except while typing. */
+function onKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Delete' && event.key !== 'Backspace') return
+  const typing = (event.target as HTMLElement).closest('input, textarea, select')
+  if (typing || !editor.selectionId) return
+  event.preventDefault()
+  editor.remove(editor.selectionId)
+}
 </script>
 
 <template>

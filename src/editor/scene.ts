@@ -75,7 +75,7 @@ export function createScene(element: HTMLCanvasElement, editor: Editor) {
   return {
     /** Copies the store state into Fabric: layers, order and selection. */
     sync() {
-      const layers = [editor.main].filter((layer) => layer !== null)
+      const layers = [editor.main, ...editor.layers].filter((layer) => layer !== null)
 
       for (const [id, object] of objects) {
         const layer = layers.find((c) => c.id === id)
