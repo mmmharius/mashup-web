@@ -1,0 +1,145 @@
+:root {
+  --background: #f3f4f7;
+  --surface: #ffffff;
+  --border: #dfe2ea;
+  --text: #1c2030;
+  --muted: #6b7186;
+  --accent: #4f46e5;
+  --accent-light: #eef0ff;
+  --danger: #d43c4d;
+  --radius: 8px;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+}
+
+.app {
+  display: grid;
+  grid-template: 'header header header' auto 'left scene right' 1fr / 260px 1fr 280px;
+  height: 100vh;
+}
+
+.header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.column {
+  background: var(--surface);
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.left {
+  grid-area: left;
+  border-right: 1px solid var(--border);
+}
+
+.right {
+  grid-area: right;
+  border-left: 1px solid var(--border);
+}
+
+.scene {
+  grid-area: scene;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+section + section {
+  margin-top: 20px;
+}
+
+button,
+.button {
+  font: inherit;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+button:hover:not(:disabled),
+.button:hover {
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+button.active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+label.field {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--muted);
+}
+
+label.field > input,
+label.field > select,
+label.field > textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  font: inherit;
+  color: var(--text);
+}
+
+label.field > select,
+label.field > textarea,
+label.field > input[type='number'] {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* shortcut: desktop layout only, revisit if the editor must work on phones */
+@media (max-width: 900px) {
+  .app {
+    grid-template: 'header' auto 'scene' 55vh 'left' auto 'right' auto / 1fr;
+    height: auto;
+  }
+}
