@@ -1,4 +1,4 @@
-import { Canvas, FabricImage, type FabricObject, IText, Rect } from 'fabric'
+import { Canvas, FabricImage, type FabricObject, IText, Point, Rect } from 'fabric'
 import type { useEditor } from '../stores/editor'
 import type { Layer } from './layers'
 import type { Size } from './formats'
@@ -84,7 +84,7 @@ function shortAngle(angle: number): number {
  * `sync` copies its state into Fabric, and gestures made on the canvas
  * (move, resize, rotate, type text) go back through the store actions.
  */
-export function createScene(element: HTMLCanvasElement, editor: Editor) {
+export function createScene(element: HTMLCanvasElement, editor: Editor, onView: (zoom: number) => void) {
   const canvas = new Canvas(element, {
     // a selected layer keeps its place in the stack
     preserveObjectStacking: true,
@@ -96,6 +96,8 @@ export function createScene(element: HTMLCanvasElement, editor: Editor) {
   canvas.add(background)
   let visual: Size = { width: 0, height: 0 }
   let exporting = false
+  /** Zoom that shows the whole visual: the reference for the view zoom limits. */
+  let fitZoom = 1
 
   // the canvas covers the whole workspace: whatever overflows the visual stays visible but dimmed,
   // and the handles are never cut off by the edge
@@ -145,11 +147,22 @@ export function createScene(element: HTMLCanvasElement, editor: Editor) {
   })
 
   canvas.on('mouse:wheel', ({ e }) => {
-    const layer = editor.selection
-    if (!layer) return
     e.preventDefault()
     const factor = e.deltaY < 0 ? 1.05 : 1 / 1.05
-    editor.update(layer.id, { scale: layer.scale * factor })
+    const layer = editor.selection
+    if (e.ctrlKey || e.metaKey) {
+      // Ctrl + wheel: zooms the view around the pointer, the visual itself does not change
+      const zoom = Math.min(fitZoom * 8, Math.max(fitZoom / 4, canvas.getZoom() * factor))
+      canvas.zoomToPoint(new Point(e.offsetX, e.offsetY), zoom)
+      onView(zoom)
+    } else if (layer) {
+      editor.update(layer.id, { scale: layer.scale * factor })
+    } else {
+      // nothing selected: the wheel scrolls the view
+      const view = canvas.viewportTransform
+      canvas.setViewportTransform([view[0], 0, 0, view[3], view[4] - e.deltaX, view[5] - e.deltaY])
+      onView(view[0])
+    }
   })
 
   return {
@@ -196,6 +209,8 @@ export function createScene(element: HTMLCanvasElement, editor: Editor) {
     /** Centers the scaled-down visual in the workspace: layers stay in export pixels. */
     resizeView(size: Size, available: Size, scale: number) {
       visual = size
+      fitZoom = scale
+      onView(scale)
       canvas.setDimensions({ width: available.width, height: available.height })
       canvas.setViewportTransform([
         scale,

@@ -21,10 +21,13 @@ const scale = computed(() =>
 )
 
 const canvasElement = ref<HTMLCanvasElement>()
+/** Actual view zoom: the one showing the whole visual, or the one chosen with Ctrl + wheel. */
+const viewZoom = ref(1)
+
 
 onMounted(() => {
   observer.observe(zone.value!)
-  const fabric = createScene(canvasElement.value!, editor)
+  const fabric = createScene(canvasElement.value!, editor, (zoom) => (viewZoom.value = zoom))
   scene.value = fabric
   // the store is in charge: every state change is copied into Fabric
   watchEffect(() => fabric.resizeView(editor.size, { ...available }, scale.value))
@@ -53,7 +56,7 @@ function moveWithKeyboard(event: KeyboardEvent) {
   // inside a field (slider, list, text) the arrow keys keep their usual role
   if (!direction || !layer || (event.target as HTMLElement).closest('input, select, textarea')) return
   event.preventDefault()
-  const step = (event.shiftKey ? 10 : 1) / scale.value
+  const step = (event.shiftKey ? 10 : 1) / viewZoom.value
   editor.update(layer.id, { x: layer.x + direction[0] * step, y: layer.y + direction[1] * step })
 }
 
@@ -76,7 +79,7 @@ function onKeydown(event: KeyboardEvent) {
     </div>
     <p class="caption">
       Export : {{ editor.size.width }} x {{ editor.size.height }} px, affiché à
-      {{ Math.round(scale * 100) }} %
+      {{ Math.round(viewZoom * 100) }} %
     </p>
   </div>
 </template>
@@ -105,6 +108,9 @@ function onKeydown(event: KeyboardEvent) {
 
 .caption {
   margin: 0;
+  /* fixed height: a line wrap would resize the area, which would reset the view */
+  height: 28px;
+  line-height: 28px;
   text-align: center;
   color: var(--muted);
 }
