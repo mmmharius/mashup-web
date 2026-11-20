@@ -12,10 +12,19 @@ const stack = computed(() => [...editor.layers].reverse())
 <template>
   <p v-if="!stack.length && !editor.main" class="empty">Aucun calque pour l'instant.</p>
   <ul v-else>
-    <li v-for="layer in stack" :key="layer.id" :class="{ active: layer.id === editor.selectionId }">
+    <li v-for="(layer, index) in stack" :key="layer.id" :class="{ active: layer.id === editor.selectionId }">
       <button class="name" @click="editor.select(layer.id)">{{ layerName(layer) }}</button>
-      <button title="Monter" aria-label="Monter" @click="editor.reorder(layer.id, 1)">↑</button>
-      <button title="Descendre" aria-label="Descendre" @click="editor.reorder(layer.id, -1)">↓</button>
+      <button title="Monter" aria-label="Monter" :disabled="index === 0" @click="editor.reorder(layer.id, 1)">
+        ↑
+      </button>
+      <button
+        title="Descendre"
+        aria-label="Descendre"
+        :disabled="index === stack.length - 1"
+        @click="editor.reorder(layer.id, -1)"
+      >
+        ↓
+      </button>
       <button title="Supprimer" aria-label="Supprimer" @click="editor.remove(layer.id)">✕</button>
     </li>
     <li v-if="editor.main" :class="{ active: editor.main.id === editor.selectionId }">
