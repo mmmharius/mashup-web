@@ -62,7 +62,7 @@ function onKeydown(event: KeyboardEvent) {
   moveWithKeyboard(event)
   if (event.key !== 'Delete' && event.key !== 'Backspace') return
   // a slider or a checkbox keeps focus after use: only a text field blocks the key
-  const typing = (event.target as HTMLElement).closest('textarea, input[type=number]')
+  const typing = (event.target as HTMLElement).closest('textarea, input[type=number], input[type=text]')
   if (typing || !editor.selectionId) return
   event.preventDefault()
   editor.remove(editor.selectionId)

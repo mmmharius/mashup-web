@@ -47,3 +47,13 @@ test('quick successive updates of one layer make a single history step', () => {
 
   expect(editor.layers[0].scale).toBe(1)
 })
+
+test('rename a layer, then undo', () => {
+  const editor = useEditor()
+  editor.layers = [image('a', 10, 10)]
+
+  editor.rename('a', '  Client logo ')
+  expect(editor.layers[0].name).toBe('Client logo')
+  editor.undo()
+  expect(editor.layers[0].name).toBe('a')
+})

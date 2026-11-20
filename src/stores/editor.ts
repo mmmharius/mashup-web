@@ -142,6 +142,7 @@ export const useEditor = defineStore('editor', {
       const text: TextLayer = {
         id: newId(),
         type: 'text',
+        name: '',
         text: 'Votre texte',
         // readable whatever the format: one fifteenth of the canvas width
         size: Math.round(this.size.width / 15),
@@ -181,6 +182,16 @@ export const useEditor = defineStore('editor', {
       if (!layer) return
       this.remember(`position:${id}`)
       Object.assign(layer, changes)
+    },
+
+    /** Name shown in the layer list. */
+    rename(id: string, name: string) {
+      const layer = this.layers.find((c) => c.id === id)
+      if (!layer || layer.name === name.trim()) return
+      // an image always keeps a name; a text with an empty name falls back to the start of its content
+      if (layer.type === 'image' && !name.trim()) return
+      this.remember()
+      layer.name = name.trim()
     },
 
     /** Moves a layer up (+1) or down (-1) in the stack. */

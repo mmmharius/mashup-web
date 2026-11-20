@@ -4,10 +4,10 @@ import { useEditor } from '../stores/editor'
 
 const editor = useEditor()
 
-/** Ctrl+Z undoes, Ctrl+Shift+Z or Ctrl+Y redoes. Inside a text area the browser keeps its own undo. */
+/** Ctrl+Z undoes, Ctrl+Shift+Z or Ctrl+Y redoes. Inside a text field the browser keeps its own undo. */
 function onKeydown(event: KeyboardEvent) {
   if (!(event.ctrlKey || event.metaKey)) return
-  if ((event.target as HTMLElement).closest('textarea')) return
+  if ((event.target as HTMLElement).closest('textarea, input[type=text]')) return
   const key = event.key.toLowerCase()
   if (key !== 'z' && key !== 'y') return
   event.preventDefault()

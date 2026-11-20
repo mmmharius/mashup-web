@@ -19,6 +19,8 @@ export interface ImageLayer extends Base {
 
 export interface TextLayer extends Base {
   type: 'text'
+  /** Name given by hand. Empty: the list shows the start of the text. */
+  name: string
   text: string
   /** Font size, in export pixels. */
   size: number
@@ -32,7 +34,7 @@ export type Layer = ImageLayer | TextLayer
 
 /** Name shown in the layer list. */
 export function layerName(layer: Layer): string {
-  return layer.type === 'image' ? layer.name : layer.text.split('\n')[0] || 'Texte vide'
+  return layer.name || (layer.type === 'text' && layer.text.split('\n')[0]) || 'Sans nom'
 }
 
 export const MAIN_ID = 'main'
