@@ -22,6 +22,23 @@ class RoundedText extends IText {
   }
 }
 
+const ACCENT = '#4f46e5'
+
+/** Rotation handle: a filled circle with an arrow, to tell it apart from the size handles. */
+function rotationHandle(ctx: CanvasRenderingContext2D, left: number, top: number) {
+  ctx.save()
+  ctx.fillStyle = ACCENT
+  ctx.beginPath()
+  ctx.arc(left, top, 11, 0, 2 * Math.PI)
+  ctx.fill()
+  ctx.fillStyle = '#ffffff'
+  ctx.font = '15px sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('↻', left, top + 1)
+  ctx.restore()
+}
+
 function create(layer: Layer): FabricObject {
   const common = { originX: 'center', originY: 'center', lockScalingFlip: true } as const
   const object =
@@ -31,6 +48,8 @@ function create(layer: Layer): FabricObject {
         new RoundedText(layer.text, { ...common, textAlign: 'center', objectCaching: false })
   // corner handles only: the layer keeps its proportions
   object.setControlsVisibility({ ml: false, mr: false, mt: false, mb: false })
+  object.set({ borderColor: ACCENT, cornerColor: '#ffffff', cornerStrokeColor: ACCENT, transparentCorners: false })
+  Object.assign(object.controls.mtr, { render: rotationHandle, sizeX: 24, sizeY: 24, cursorStyle: 'grab' })
   return object
 }
 
