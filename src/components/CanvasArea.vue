@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watchEffect } from 'vue'
+import { scene } from '../editor/export'
 import { displayScale } from '../editor/formats'
-import { createScene, type Scene } from '../editor/scene'
+import { createScene } from '../editor/scene'
 import { useEditor } from '../stores/editor'
 
 const editor = useEditor()
@@ -16,12 +17,11 @@ const observer = new ResizeObserver(([entry]) => {
 const scale = computed(() => displayScale(editor.size, available))
 
 const canvasElement = ref<HTMLCanvasElement>()
-let scene: Scene | undefined
 
 onMounted(() => {
   observer.observe(zone.value!)
   const fabric = createScene(canvasElement.value!, editor)
-  scene = fabric
+  scene.value = fabric
   // the store is in charge: every state change is copied into Fabric
   watchEffect(() => fabric.resizeView(editor.size, scale.value))
   watchEffect(() => fabric.sync())
@@ -31,7 +31,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   observer.disconnect()
   window.removeEventListener('keydown', onKeydown)
-  scene?.destroy()
+  scene.value?.destroy()
+  scene.value = undefined
 })
 
 /** Delete or Backspace removes the selected layer, except while typing. */

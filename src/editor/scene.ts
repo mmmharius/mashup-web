@@ -152,6 +152,20 @@ export function createScene(element: HTMLCanvasElement, editor: Editor) {
       canvas.setZoom(scale)
     },
 
+    /** Renders the visual at its exact export size, without the selection handles. */
+    render(size: Size): HTMLCanvasElement {
+      const zoom = canvas.getZoom()
+      const display = { width: canvas.width, height: canvas.height }
+      canvas.setDimensions({ width: size.width, height: size.height })
+      canvas.setZoom(1)
+      try {
+        return canvas.toCanvasElement()
+      } finally {
+        canvas.setDimensions(display)
+        canvas.setZoom(zoom)
+      }
+    },
+
     destroy() {
       return canvas.dispose()
     },
