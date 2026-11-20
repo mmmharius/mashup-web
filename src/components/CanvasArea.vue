@@ -35,8 +35,27 @@ onBeforeUnmount(() => {
   scene.value = undefined
 })
 
+const ARROWS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+}
+
+/** Arrow keys move the selected layer by one screen pixel, ten with Shift. */
+function moveWithKeyboard(event: KeyboardEvent) {
+  const direction = ARROWS[event.key]
+  const layer = editor.selection
+  // inside a field (slider, list, text) the arrow keys keep their usual role
+  if (!direction || !layer || (event.target as HTMLElement).closest('input, select, textarea')) return
+  event.preventDefault()
+  const step = (event.shiftKey ? 10 : 1) / scale.value
+  editor.update(layer.id, { x: layer.x + direction[0] * step, y: layer.y + direction[1] * step })
+}
+
 /** Delete or Backspace removes the selected layer, except while typing. */
 function onKeydown(event: KeyboardEvent) {
+  moveWithKeyboard(event)
   if (event.key !== 'Delete' && event.key !== 'Backspace') return
   // a slider or a checkbox keeps focus after use: only a text field blocks the key
   const typing = (event.target as HTMLElement).closest('textarea')
