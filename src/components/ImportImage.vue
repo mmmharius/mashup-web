@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const emit = defineEmits<{ file: [file: File] }>()
+const emit = defineEmits<{ (event: 'file', file: File): void }>()
 const error = ref('')
 
 function chosen(event: Event) {
@@ -16,11 +16,13 @@ function chosen(event: Event) {
 </script>
 
 <template>
-  <label class="button import">
-    <slot />
-    <input type="file" accept="image/*" @change="chosen" />
-  </label>
-  <p v-if="error" class="error" role="alert">{{ error }}</p>
+  <div>
+    <label class="button import">
+      <slot />
+      <input type="file" accept="image/*" @change="chosen" />
+    </label>
+    <p v-if="error" class="error" role="alert">{{ error }}</p>
+  </div>
 </template>
 
 <style scoped>

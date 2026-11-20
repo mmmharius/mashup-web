@@ -18,7 +18,11 @@ function confirmRename(event: Event) {
   renaming.value = null
 }
 
-const vFocus = { mounted: (field: HTMLInputElement) => field.select() }
+function setBackground(event: Event) {
+  editor.setBackground((event.target as HTMLInputElement).value)
+}
+
+const vFocus = { inserted: (field: HTMLInputElement) => field.select() }
 </script>
 
 <template>
@@ -73,7 +77,7 @@ const vFocus = { mounted: (field: HTMLInputElement) => field.select() }
           type="color"
           :value="editor.background"
           aria-label="Couleur du fond"
-          @input="editor.setBackground(($event.target as HTMLInputElement).value)"
+          @input="setBackground"
         />
       </label>
     </li>

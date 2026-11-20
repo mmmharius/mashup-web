@@ -1,9 +1,15 @@
-import { createPinia } from 'pinia'
-import { createApp } from 'vue'
+import { createPinia, PiniaVuePlugin } from 'pinia'
+import Vue from 'vue'
 import App from './App.vue'
 import './style.css'
 import { track } from './tracking'
 import { editorTracking } from './tracking/pinia'
 
-createApp(App).use(createPinia().use(editorTracking)).mount('#app')
+Vue.use(PiniaVuePlugin)
+
+new Vue({
+  pinia: createPinia().use(editorTracking),
+  render: (h) => h(App),
+}).$mount('#app')
+
 track('session_start', {})

@@ -9,6 +9,10 @@ function value(event: Event): string {
   return (event.target as HTMLInputElement).value
 }
 
+function isChecked(event: Event): boolean {
+  return (event.target as HTMLInputElement).checked
+}
+
 /** Applies a hand-typed value live, clamped to its limits. */
 function applyTyped(
   event: Event,
@@ -25,123 +29,121 @@ function applyTyped(
 </script>
 
 <template>
-  <p v-if="!editor.selection" class="empty">Sélectionnez un élément sur le canvas pour le régler.</p>
+  <div>
+    <p v-if="!editor.selection" class="empty">Sélectionnez un élément sur le canvas pour le régler.</p>
 
-  <template v-else>
-    <section v-if="editor.selection.type === 'text'">
-      <h2>Texte</h2>
-      <label class="field">
-        Contenu
-        <textarea
-          rows="3"
-          :value="editor.selection.text"
-          @input="editor.updateText(editor.selection.id, { text: value($event) })"
-        />
-      </label>
-      <label class="field">
-        Police
-        <select
-          :value="editor.selection.font"
-          :style="{ fontFamily: editor.selection.font }"
-          @change="editor.updateText(editor.selection.id, { font: value($event) })"
-        >
-          <option v-for="font in FONTS" :key="font" :style="{ fontFamily: font }">{{ font }}</option>
-        </select>
-      </label>
-      <label class="field">
-        Taille : {{ editor.selection.size }} px
-        <input
-          type="range"
-          min="12"
-          max="400"
-          :value="editor.selection.size"
-          @input="editor.updateText(editor.selection.id, { size: Number(value($event)) })"
-        />
-      </label>
-      <div class="colors">
-        <label>
-          Couleur du texte
-          <input
-            type="color"
-            :value="editor.selection.color"
-            @input="editor.updateText(editor.selection.id, { color: value($event) })"
+    <template v-else>
+      <section v-if="editor.selection.type === 'text'">
+        <h2>Texte</h2>
+        <label class="field">
+          Contenu
+          <textarea
+            rows="3"
+            :value="editor.selection.text"
+            @input="editor.updateText(editor.selection.id, { text: value($event) })"
           />
         </label>
-        <label>
-          Couleur de fond
+        <label class="field">
+          Police
+          <select
+            :value="editor.selection.font"
+            :style="{ fontFamily: editor.selection.font }"
+            @change="editor.updateText(editor.selection.id, { font: value($event) })"
+          >
+            <option v-for="font in FONTS" :key="font" :style="{ fontFamily: font }">{{ font }}</option>
+          </select>
+        </label>
+        <label class="field">
+          Taille : {{ editor.selection.size }} px
           <input
-            type="color"
-            :value="editor.selection.background"
-            :disabled="!editor.selection.backgroundEnabled"
-            @input="editor.updateText(editor.selection.id, { background: value($event) })"
+            type="range"
+            min="12"
+            max="400"
+            :value="editor.selection.size"
+            @input="editor.updateText(editor.selection.id, { size: Number(value($event)) })"
           />
         </label>
-      </div>
-      <label class="checkbox">
-        <input
-          type="checkbox"
-          :checked="editor.selection.backgroundEnabled"
-          @change="
-            editor.updateText(editor.selection.id, {
-              backgroundEnabled: ($event.target as HTMLInputElement).checked,
-            })
-          "
-        />
-        Afficher le fond
-      </label>
-    </section>
-
-    <section>
-      <h2>Position</h2>
-      <div class="setting">
-        <span>Zoom</span>
-        <span>
+        <div class="colors">
+          <label>
+            Couleur du texte
+            <input
+              type="color"
+              :value="editor.selection.color"
+              @input="editor.updateText(editor.selection.id, { color: value($event) })"
+            />
+          </label>
+          <label>
+            Couleur de fond
+            <input
+              type="color"
+              :value="editor.selection.background"
+              :disabled="!editor.selection.backgroundEnabled"
+              @input="editor.updateText(editor.selection.id, { background: value($event) })"
+            />
+          </label>
+        </div>
+        <label class="checkbox">
           <input
-            type="number"
-            min="1"
-            max="1000"
-            aria-label="Zoom en pourcentage"
-            :value="Math.round(editor.selection.scale * 100)"
-            @input="applyTyped($event, 1, 1000, (zoom) => ({ scale: zoom / 100 }))"
+            type="checkbox"
+            :checked="editor.selection.backgroundEnabled"
+            @change="editor.updateText(editor.selection.id, { backgroundEnabled: isChecked($event) })"
           />
-          %
-        </span>
-        <input
-          type="range"
-          min="5"
-          max="400"
-          aria-label="Zoom"
-          :value="editor.selection.scale * 100"
-          @input="editor.update(editor.selection.id, { scale: Number(value($event)) / 100 })"
-        />
-      </div>
-      <div class="setting">
-        <span>Rotation</span>
-        <span>
+          Afficher le fond
+        </label>
+      </section>
+
+      <section>
+        <h2>Position</h2>
+        <div class="setting">
+          <span>Zoom</span>
+          <span>
+            <input
+              type="number"
+              min="1"
+              max="1000"
+              aria-label="Zoom en pourcentage"
+              :value="Math.round(editor.selection.scale * 100)"
+              @input="applyTyped($event, 1, 1000, (zoom) => ({ scale: zoom / 100 }))"
+            />
+            %
+          </span>
           <input
-            type="number"
+            type="range"
+            min="5"
+            max="400"
+            aria-label="Zoom"
+            :value="editor.selection.scale * 100"
+            @input="editor.update(editor.selection.id, { scale: Number(value($event)) / 100 })"
+          />
+        </div>
+        <div class="setting">
+          <span>Rotation</span>
+          <span>
+            <input
+              type="number"
+              min="-180"
+              max="180"
+              aria-label="Rotation en degrés"
+              :value="Math.round(editor.selection.rotation)"
+              @input="applyTyped($event, -180, 180, (rotation) => ({ rotation }))"
+            />
+            °
+          </span>
+          <input
+            type="range"
             min="-180"
             max="180"
-            aria-label="Rotation en degrés"
-            :value="Math.round(editor.selection.rotation)"
-            @input="applyTyped($event, -180, 180, (rotation) => ({ rotation }))"
+            aria-label="Rotation"
+            :value="editor.selection.rotation"
+            @input="editor.update(editor.selection.id, { rotation: Number(value($event)) })"
           />
-          °
-        </span>
-        <input
-          type="range"
-          min="-180"
-          max="180"
-          aria-label="Rotation"
-          :value="editor.selection.rotation"
-          @input="editor.update(editor.selection.id, { rotation: Number(value($event)) })"
-        />
-      </div>
-      <button v-if="editor.selection.id === MAIN_ID" @click="editor.recenterMain()">
-        Recadrer sur le canvas
-      </button>
-    </section>
-  </template>
+        </div>
+        <button v-if="editor.selection.id === MAIN_ID" @click="editor.recenterMain()">
+          Recadrer sur le canvas
+        </button>
+      </section>
+    </template>
+  </div>
 </template>
 
 <style scoped>
