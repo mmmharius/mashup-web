@@ -20,9 +20,11 @@ let scene: Scene | undefined
 
 onMounted(() => {
   observer.observe(zone.value!)
-  const fabric = createScene(canvasElement.value!)
+  const fabric = createScene(canvasElement.value!, editor)
   scene = fabric
+  // the store is in charge: every state change is copied into Fabric
   watchEffect(() => fabric.resizeView(editor.size, scale.value))
+  watchEffect(() => fabric.sync())
 })
 
 onBeforeUnmount(() => {
