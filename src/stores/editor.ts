@@ -1,6 +1,14 @@
 import { defineStore } from 'pinia'
-import { type Layer, type ImageLayer, loadImage, MAIN_ID, newId } from '../editor/layers'
+import {
+  type Layer,
+  type ImageLayer,
+  type TextLayer,
+  loadImage,
+  MAIN_ID,
+  newId,
+} from '../editor/layers'
 import { coverScale, type Format, canvasSize } from '../editor/formats'
+import { loadFont, FONTS } from '../editor/fonts'
 
 async function imageLayer(file: File, id: string): Promise<ImageLayer> {
   const element = await loadImage(file)
@@ -77,6 +85,38 @@ export const useEditor = defineStore('editor', {
       image.scale = (this.size.width * 0.4) / image.width
       this.layers.push(image)
       this.selectionId = image.id
+    },
+
+    async addText() {
+      const font = FONTS[0]
+      await loadFont(font)
+      const text: TextLayer = {
+        id: newId(),
+        type: 'text',
+        text: 'Votre texte',
+        // readable whatever the format: one fifteenth of the canvas width
+        size: Math.round(this.size.width / 15),
+        font,
+        color: '#ffffff',
+        background: '#1c2030',
+        backgroundEnabled: true,
+        x: this.size.width / 2,
+        y: this.size.height / 2,
+        rotation: 0,
+        scale: 1,
+      }
+      this.layers.push(text)
+      this.selectionId = text.id
+    },
+
+    async updateText(
+      id: string,
+      changes: Partial<Pick<TextLayer, 'text' | 'size' | 'font' | 'color' | 'background' | 'backgroundEnabled'>>,
+    ) {
+      // the font must be loaded before drawing, otherwise Fabric measures the text with another one
+      if (changes.font) await loadFont(changes.font)
+      const layer = this.layers.find((c) => c.id === id)
+      if (layer?.type === 'text') Object.assign(layer, changes)
     },
 
     select(id: string | null) {

@@ -1,13 +1,34 @@
-import { Canvas, FabricImage, type FabricObject } from 'fabric'
+import { Canvas, FabricImage, type FabricObject, IText } from 'fabric'
 import type { useEditor } from '../stores/editor'
 import type { Layer } from './layers'
 import type { Size } from './formats'
 
 type Editor = ReturnType<typeof useEditor>
 
+/** Background padding around the text, as a fraction of the font size. */
+const BACKGROUND_PADDING = 0.35
+
+/** Text editable on the canvas, whose background extends slightly beyond the letters with rounded corners. */
+class RoundedText extends IText {
+  _renderBackground(ctx: CanvasRenderingContext2D) {
+    if (!this.backgroundColor) return
+    const padding = this.fontSize * BACKGROUND_PADDING
+    const width = this.width + 2 * padding
+    const height = this.height + 2 * padding
+    ctx.fillStyle = this.backgroundColor
+    ctx.beginPath()
+    ctx.roundRect(-width / 2, -height / 2, width, height, this.fontSize * 0.2)
+    ctx.fill()
+  }
+}
+
 function create(layer: Layer): FabricObject {
   const common = { originX: 'center', originY: 'center', lockScalingFlip: true } as const
-  const object = new FabricImage(layer.element, common)
+  const object =
+    layer.type === 'image'
+      ? new FabricImage(layer.element, common)
+      : // no caching: the background drawn above extends beyond the text box
+        new RoundedText(layer.text, { ...common, textAlign: 'center', objectCaching: false })
   // corner handles only: the layer keeps its proportions
   object.setControlsVisibility({ ml: false, mr: false, mt: false, mb: false })
   return object
@@ -15,12 +36,22 @@ function create(layer: Layer): FabricObject {
 
 /** What Fabric must display for a store layer. */
 function properties(layer: Layer): Record<string, unknown> {
-  return {
+  const position = {
     left: layer.x,
     top: layer.y,
     angle: layer.rotation,
     scaleX: layer.scale,
     scaleY: layer.scale,
+  }
+  if (layer.type === 'image') return position
+  return {
+    ...position,
+    text: layer.text,
+    fontSize: layer.size,
+    fontFamily: layer.font,
+    fill: layer.color,
+    backgroundColor: layer.backgroundEnabled ? layer.background : '',
+    padding: layer.size * BACKGROUND_PADDING,
   }
 }
 
@@ -32,7 +63,7 @@ function shortAngle(angle: number): number {
 /**
  * Binds the store to a Fabric canvas. The store stays the single source of truth:
  * `sync` copies its state into Fabric, and gestures made on the canvas
- * (move, resize, rotate) go back through the store actions.
+ * (move, resize, rotate, type text) go back through the store actions.
  */
 export function createScene(element: HTMLCanvasElement, editor: Editor) {
   const canvas = new Canvas(element, {
@@ -64,6 +95,11 @@ export function createScene(element: HTMLCanvasElement, editor: Editor) {
   canvas.on('selection:updated', selection)
   canvas.on('selection:cleared', selection)
 
+  canvas.on('text:changed', ({ target }) => {
+    const id = ids.get(target)
+    if (id) editor.updateText(id, { text: target.text })
+  })
+
   canvas.on('mouse:wheel', ({ e }) => {
     const layer = editor.selection
     if (!layer) return
@@ -94,6 +130,7 @@ export function createScene(element: HTMLCanvasElement, editor: Editor) {
           ids.set(object, layer.id)
           canvas.add(object)
         }
+        // only touch what changes: rewriting the text while typing would move the caret
         for (const [key, value] of Object.entries(properties(layer))) {
           if (object.get(key) !== value) object.set(key, value)
         }

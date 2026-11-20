@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { layerName } from '../editor/layers'
 import { useEditor } from '../stores/editor'
 
 const editor = useEditor()
@@ -12,7 +13,7 @@ const stack = computed(() => [...editor.layers].reverse())
   <p v-if="!stack.length && !editor.main" class="empty">Aucun calque pour l'instant.</p>
   <ul v-else>
     <li v-for="layer in stack" :key="layer.id" :class="{ active: layer.id === editor.selectionId }">
-      <button class="name" @click="editor.select(layer.id)">{{ layer.name }}</button>
+      <button class="name" @click="editor.select(layer.id)">{{ layerName(layer) }}</button>
       <button title="Monter" aria-label="Monter" @click="editor.reorder(layer.id, 1)">↑</button>
       <button title="Descendre" aria-label="Descendre" @click="editor.reorder(layer.id, -1)">↓</button>
       <button title="Supprimer" aria-label="Supprimer" @click="editor.remove(layer.id)">✕</button>

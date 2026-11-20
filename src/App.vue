@@ -25,6 +25,7 @@ const editor = useEditor()
       <section>
         <h2>Ajouter</h2>
         <ImportImage @file="editor.addImage">Image par-dessus</ImportImage>
+        <button class="add-text" @click="editor.addText()">Texte</button>
       </section>
       <section>
         <h2>Calques</h2>
@@ -39,3 +40,10 @@ const editor = useEditor()
     </aside>
   </div>
 </template>
+
+<style scoped>
+.add-text {
+  width: 100%;
+  margin-top: 6px;
+}
+</style>
