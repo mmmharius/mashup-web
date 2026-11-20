@@ -38,15 +38,21 @@ onBeforeUnmount(() => {
 /** Delete or Backspace removes the selected layer, except while typing. */
 function onKeydown(event: KeyboardEvent) {
   if (event.key !== 'Delete' && event.key !== 'Backspace') return
-  const typing = (event.target as HTMLElement).closest('input, textarea, select')
+  // a slider or a checkbox keeps focus after use: only a text field blocks the key
+  const typing = (event.target as HTMLElement).closest('textarea')
   if (typing || !editor.selectionId) return
   event.preventDefault()
   editor.remove(editor.selectionId)
 }
+
+/** A click around the canvas, in the grey area, deselects the layer. */
+function clickAround(event: MouseEvent) {
+  if (!(event.target as HTMLElement).closest('.canvas-container')) editor.select(null)
+}
 </script>
 
 <template>
-  <div class="frame">
+  <div class="frame" @mousedown="clickAround">
     <div ref="zone" class="zone">
       <canvas ref="canvasElement" aria-label="Aperçu du visuel" />
     </div>
