@@ -26,6 +26,19 @@ async function imageLayer(file: File, id: string): Promise<ImageLayer> {
   }
 }
 
+/** State restored by undo / redo. The selection is not part of it. */
+interface Snapshot {
+  format: Format
+  main: ImageLayer | null
+  layers: Layer[]
+}
+
+const HISTORY_MAX = 50
+/** Quick successive updates of the same layer (slider, wheel, typing) make a single history step. */
+const GROUPING_DELAY = 800
+let lastKey = ''
+let lastTime = 0
+
 export const useEditor = defineStore('editor', {
   state: () => ({
     format: 'auto' as Format,
@@ -33,6 +46,9 @@ export const useEditor = defineStore('editor', {
     /** Layers placed over the main image, bottom to top. */
     layers: [] as Layer[],
     selectionId: null as string | null,
+    /** Previous states (undo) and undone states (redo). */
+    past: [] as Snapshot[],
+    future: [] as Snapshot[],
   }),
 
   getters: {
@@ -45,29 +61,48 @@ export const useEditor = defineStore('editor', {
 
   actions: {
     selectFormat(format: Format) {
+      if (format === this.format) return
+      this.remember()
       this.resize(() => (this.format = format))
     },
 
     async importMain(file: File) {
       const image = await imageLayer(file, MAIN_ID)
+      this.remember()
       this.resize(() => (this.main = image))
+      this.recenter()
       this.selectionId = MAIN_ID
     },
 
-    /** Applies a change that may resize the canvas, then moves the layers proportionally. */
+    /**
+     * Applies a change that may resize the canvas, without undoing the work already done:
+     * each layer keeps its relative place and size, the main image keeps its framing.
+     */
     resize(change: () => void) {
       const before = this.size
+      const image = this.main
+      const coverBefore = image ? coverScale(image, before) : 1
       change()
       const after = this.size
+      const ratioX = after.width / before.width
+      const ratioY = after.height / before.height
+      // short-side ratio: a logo keeps the same size from 9:16 to 16:9
+      const zoom = Math.min(after.width, after.height) / Math.min(before.width, before.height)
       for (const layer of this.layers) {
-        layer.x *= after.width / before.width
-        layer.y *= after.height / before.height
+        layer.x *= ratioX
+        layer.y *= ratioY
+        layer.scale *= zoom
       }
-      this.recenterMain()
+      // same image as before: its zoom stays the same relative to the size that covers the canvas
+      if (image && image === this.main) {
+        image.x *= ratioX
+        image.y *= ratioY
+        image.scale *= coverScale(image, after) / coverBefore
+      }
     },
 
     /** Puts the main image back in the center, upright, at the size that covers the canvas. */
-    recenterMain() {
+    recenter() {
       if (!this.main) return
       Object.assign(this.main, {
         x: this.size.width / 2,
@@ -77,12 +112,18 @@ export const useEditor = defineStore('editor', {
       })
     },
 
+    recenterMain() {
+      this.remember()
+      this.recenter()
+    },
+
     async addImage(file: File) {
       const image = await imageLayer(file, newId())
       image.x = this.size.width / 2
       image.y = this.size.height / 2
       // placed at 40% of the canvas width: visible without hiding the main image
       image.scale = (this.size.width * 0.4) / image.width
+      this.remember()
       this.layers.push(image)
       this.selectionId = image.id
     },
@@ -105,6 +146,7 @@ export const useEditor = defineStore('editor', {
         rotation: 0,
         scale: 1,
       }
+      this.remember()
       this.layers.push(text)
       this.selectionId = text.id
     },
@@ -116,7 +158,9 @@ export const useEditor = defineStore('editor', {
       // the font must be loaded before drawing, otherwise Fabric measures the text with another one
       if (changes.font) await loadFont(changes.font)
       const layer = this.layers.find((c) => c.id === id)
-      if (layer?.type === 'text') Object.assign(layer, changes)
+      if (layer?.type !== 'text') return
+      this.remember(`text:${id}`)
+      Object.assign(layer, changes)
     },
 
     select(id: string | null) {
@@ -126,7 +170,9 @@ export const useEditor = defineStore('editor', {
     /** Move, zoom or rotation of a layer. */
     update(id: string, changes: Partial<Pick<Layer, 'x' | 'y' | 'rotation' | 'scale'>>) {
       const layer = this.main?.id === id ? this.main : this.layers.find((c) => c.id === id)
-      if (layer) Object.assign(layer, changes)
+      if (!layer) return
+      this.remember(`position:${id}`)
+      Object.assign(layer, changes)
     },
 
     /** Moves a layer up (+1) or down (-1) in the stack. */
@@ -134,14 +180,58 @@ export const useEditor = defineStore('editor', {
       const fromIndex = this.layers.findIndex((layer) => layer.id === id)
       const toIndex = fromIndex + direction
       if (fromIndex < 0 || toIndex < 0 || toIndex >= this.layers.length) return
+      this.remember()
       const [layer] = this.layers.splice(fromIndex, 1)
       this.layers.splice(toIndex, 0, layer)
     },
 
     remove(id: string) {
+      this.remember()
       if (this.main?.id === id) this.resize(() => (this.main = null))
       this.layers = this.layers.filter((layer) => layer.id !== id)
       if (this.selectionId === id) this.selectionId = null
+    },
+
+    /** Copy of the current state. The images themselves are shared, only their settings are copied. */
+    snapshot(): Snapshot {
+      return {
+        format: this.format,
+        main: this.main && { ...this.main },
+        layers: this.layers.map((layer) => ({ ...layer })),
+      }
+    },
+
+    /** Keeps the current state before a change. With a key, groups quick successive changes. */
+    remember(key = '') {
+      const now = Date.now()
+      const grouped = key !== '' && key === lastKey && now - lastTime < GROUPING_DELAY
+      lastKey = key
+      lastTime = now
+      if (grouped) return
+      this.past = [...this.past, this.snapshot()].slice(-HISTORY_MAX)
+      this.future = []
+    },
+
+    restore(snapshot: Snapshot) {
+      Object.assign(this, snapshot)
+      lastKey = ''
+      if (!this.selection) this.selectionId = null
+    },
+
+    undo() {
+      const previous = this.past.at(-1)
+      if (!previous) return
+      this.future = [...this.future, this.snapshot()]
+      this.past = this.past.slice(0, -1)
+      this.restore(previous)
+    },
+
+    redo() {
+      const next = this.future.at(-1)
+      if (!next) return
+      this.past = [...this.past, this.snapshot()]
+      this.future = this.future.slice(0, -1)
+      this.restore(next)
     },
   },
 })
