@@ -1,5 +1,6 @@
 import { shallowRef } from 'vue'
 import { useEditor } from '../stores/editor'
+import { track } from '../tracking'
 import type { Scene } from './scene'
 
 /** The Fabric scene on screen, set by CanvasArea. */
@@ -22,8 +23,7 @@ function render(): Promise<Blob> {
   )
 }
 
-/** Downloads or shares the visual. A dismissed share sheet throws an `AbortError`. */
-export async function exportVisual(mode: ExportMode): Promise<void> {
+async function send(mode: ExportMode): Promise<void> {
   const file = new File([await render()], 'visual.png', { type: 'image/png' })
   if (mode === 'share') {
     await navigator.share({ files: [file] })
@@ -34,4 +34,23 @@ export async function exportVisual(mode: ExportMode): Promise<void> {
   link.download = file.name
   link.click()
   URL.revokeObjectURL(link.href)
+}
+
+/** Downloads or shares the visual. A dismissed share sheet throws an `AbortError`, which is not tracked. */
+export async function exportVisual(mode: ExportMode): Promise<void> {
+  const editor = useEditor()
+  try {
+    await send(mode)
+  } catch (cause) {
+    if ((cause as Error).name !== 'AbortError') track('export_failed', { mode })
+    throw cause
+  }
+  track('export_succeeded', {
+    mode,
+    format: editor.format,
+    ...editor.size,
+    image_count: editor.layers.filter((layer) => layer.type === 'image').length,
+    text_count: editor.layers.filter((layer) => layer.type === 'text').length,
+    seconds_since_arrival: Math.round(performance.now() / 1000),
+  })
 }

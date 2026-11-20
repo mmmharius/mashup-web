@@ -2,6 +2,7 @@
 import FormatBar from './components/FormatBar.vue'
 import ExportButtons from './components/ExportButtons.vue'
 import ImportImage from './components/ImportImage.vue'
+import EventsPanel from './components/EventsPanel.vue'
 import LayersPanel from './components/LayersPanel.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import CanvasArea from './components/CanvasArea.vue'
@@ -38,12 +39,23 @@ const editor = useEditor()
       <CanvasArea />
     </main>
     <aside class="column right">
-      <SettingsPanel />
+      <div class="settings"><SettingsPanel /></div>
+      <EventsPanel />
     </aside>
   </div>
 </template>
 
 <style scoped>
+.right {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings {
+  flex: 1;
+  margin-bottom: 16px;
+}
+
 .add-text {
   width: 100%;
   margin-top: 6px;
