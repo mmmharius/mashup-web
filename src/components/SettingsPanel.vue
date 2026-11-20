@@ -9,10 +9,18 @@ function value(event: Event): string {
   return (event.target as HTMLInputElement).value
 }
 
-/** Hand-typed value, clamped to its limits. */
-function clamp(typed: string, min: number, max: number): number {
+/** Applies a hand-typed value live, clamped to its limits. */
+function applyTyped(
+  event: Event,
+  min: number,
+  max: number,
+  change: (num: number) => { scale: number } | { rotation: number },
+) {
+  const typed = value(event)
   const num = Number(typed)
-  return Math.min(max, Math.max(min, Number.isFinite(num) ? num : min))
+  // empty field or a lone "-": the user is still typing, leave everything as is
+  if (typed === '' || !Number.isFinite(num) || !editor.selection) return
+  editor.update(editor.selection.id, change(Math.min(max, Math.max(min, num))))
 }
 </script>
 
@@ -94,7 +102,7 @@ function clamp(typed: string, min: number, max: number): number {
             max="1000"
             aria-label="Zoom en pourcentage"
             :value="Math.round(editor.selection.scale * 100)"
-            @change="editor.update(editor.selection.id, { scale: clamp(value($event), 1, 1000) / 100 })"
+            @input="applyTyped($event, 1, 1000, (zoom) => ({ scale: zoom / 100 }))"
           />
           %
         </span>
@@ -116,7 +124,7 @@ function clamp(typed: string, min: number, max: number): number {
             max="180"
             aria-label="Rotation en degrés"
             :value="Math.round(editor.selection.rotation)"
-            @change="editor.update(editor.selection.id, { rotation: clamp(value($event), -180, 180) })"
+            @input="applyTyped($event, -180, 180, (rotation) => ({ rotation }))"
           />
           °
         </span>
