@@ -90,6 +90,9 @@ export function createScene(element: HTMLCanvasElement, editor: Editor, onView: 
     preserveObjectStacking: true,
     // no multi-selection lasso
     selection: false,
+    // the right button moves the view: no browser menu on the canvas
+    fireRightClick: true,
+    stopContextMenu: true,
   })
   // the visual background: a rectangle at the very bottom of the stack, neither selectable nor movable
   const background = new Rect({ originX: 'left', originY: 'top', left: 0, top: 0, selectable: false, evented: false })
@@ -161,6 +164,23 @@ export function createScene(element: HTMLCanvasElement, editor: Editor, onView: 
     onView(zoom)
   })
 
+  // right button held: drag the view around, like a sheet of paper on a desk
+  let drag: { x: number; y: number } | null = null
+  canvas.on('mouse:down', ({ e }) => {
+    if (e instanceof MouseEvent && e.button === 2) {
+      drag = { x: e.clientX, y: e.clientY }
+      canvas.setCursor('grabbing')
+    }
+  })
+  canvas.on('mouse:move', ({ e }) => {
+    if (!drag || !(e instanceof MouseEvent)) return
+    canvas.relativePan(new Point(e.clientX - drag.x, e.clientY - drag.y))
+    drag = { x: e.clientX, y: e.clientY }
+    canvas.setCursor('grabbing')
+    onView(canvas.getZoom())
+  })
+  canvas.on('mouse:up', () => (drag = null))
+
   return {
     /** Copies the store state into Fabric: layers, order and selection. */
     sync() {
@@ -193,6 +213,8 @@ export function createScene(element: HTMLCanvasElement, editor: Editor, onView: 
       })
 
       background.set({ width: editor.size.width, height: editor.size.height, fill: editor.background })
+      // without this Fabric keeps the old bounds of the background and stops drawing it once its corner leaves the view
+      background.setCoords()
 
       const wanted = editor.selectionId ? objects.get(editor.selectionId) : undefined
       if (canvas.getActiveObject() !== wanted) {
