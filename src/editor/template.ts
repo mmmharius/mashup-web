@@ -1,5 +1,6 @@
 import type { Layer, ImageLayer } from './layers'
-import { type Format, FORMAT_LIST, type Size } from './formats'
+import { FONTS } from './fonts'
+import { canvasSize, type Format, FORMAT_LIST, type Size } from './formats'
 
 /** Placement shared by every element, in visual pixels. x and y are the center. */
 interface Placement {
@@ -142,18 +143,21 @@ export function parseTemplate(text: string): Template {
       ...placement,
       text: str(e.text, what('text')),
       size: positive(e.size, what('size')),
-      font: str(e.font, what('font')),
+      font: FONTS.includes(e.font as string) ? (e.font as string) : fail(`${what('font')} doit être une des polices de l'éditeur`),
       color: color(e.color, what('color')),
       background: e.background === null ? null : color(e.background, what('background')),
     }
   })
-  if (elements.filter((e) => e.type === 'image' && e.role === 'main').length > 1) fail('plusieurs images principales')
+  const mains = elements.filter((e): e is ImageElement => e.type === 'image' && e.role === 'main')
+  if (mains.length > 1) fail('plusieurs images principales')
+  // the editor computes the size from the format, the server reads width and height: both must agree
+  const size = canvasSize(t.format as Format, mains[0])
+  if (t.width !== size.width || t.height !== size.height) fail(`width et height doivent valoir ${size.width} x ${size.height} pour ce format`)
 
   return {
     version: 1,
     format: t.format as Format,
-    width: positive(t.width, 'width'),
-    height: positive(t.height, 'height'),
+    ...size,
     background: color(t.background, 'background'),
     elements,
   }

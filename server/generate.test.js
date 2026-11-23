@@ -77,6 +77,16 @@ test('without a main image, the new image becomes the visual background', async 
   assert.equal(await pixel(png, 50, 50), '#0000ff')
 })
 
+test('without a text, the new text is added in the center', async () => {
+  const model = await template()
+  model.elements.pop()
+  const png = await generate(model, { text: 'Sale' })
+  // 400 wide: a 27 px text on its dark background, around (200, 300); the main image stops at y = 300
+  assert.equal(await pixel(png, 200, 281), '#1c2030') // inside the top padding of the text background
+  assert.equal(await pixel(png, 200, 340), '#ffeecc') // below it, the visual background
+  assert.equal(await pixel(png, 300, 150), '#ff0000') // the rest does not change
+})
+
 test('an impossible request is rejected with the reason', async () => {
   const model = await template()
   await assert.rejects(generate({ ...model, version: 2 }), /unknown version/)

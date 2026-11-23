@@ -166,7 +166,7 @@ function check(template) {
  * @param {object} template the JSON saved by the editor
  * @param {object} [content] what gets dropped into the template
  * @param {Buffer} [content.image] replaces the main image (added as background when the template has none)
- * @param {string} [content.text] replaces the first text of the template
+ * @param {string} [content.text] replaces the first text of the template (added in the center when the template has none)
  * @param {Record<string, Buffer>} [content.images] replaces images picked by their layer name
  * @param {Record<string, string>} [content.texts] replaces texts picked by their layer name
  * @returns {Promise<Buffer>}
@@ -181,8 +181,12 @@ export async function generate(template, { image, text, images = {}, texts = {} 
     const full = { type: 'image', role: 'main', name: 'image', rotation: 0, scale: 1 }
     elements = [{ ...full, ...visual, x: visual.width / 2, y: visual.height / 2 }, ...elements]
   }
+  if (text !== undefined && !elements.some((e) => e.type === 'text')) {
+    // no text to replace: the new text is added in the center, looking like a text just added in the editor
+    const style = { size: Math.round(visual.width / 15), font: 'Inter', color: '#ffffff', background: '#1c2030' }
+    elements = [...elements, { type: 'text', name: 'text', text, x: visual.width / 2, y: visual.height / 2, rotation: 0, scale: 1, ...style }]
+  }
   const firstText = elements.find((e) => e.type === 'text')
-  requireThat(text === undefined || firstText, 'no text to replace')
   for (const [kind, names] of [['image', images], ['text', texts]]) {
     for (const name of Object.keys(names)) {
       requireThat(elements.some((e) => e.type === kind && e.name === name), `no ${kind} layer called "${name}"`)

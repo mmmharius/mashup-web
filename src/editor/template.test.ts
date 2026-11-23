@@ -64,3 +64,14 @@ test('a damaged file is rejected with the reason', () => {
   const withoutX = { ...template, elements: [{ ...template.elements[2], x: 'left' }] }
   expect(() => parseTemplate(JSON.stringify(withoutX))).toThrow('x de l\'élément 1 doit être un nombre')
 })
+
+test('a hand-edited file the server would refuse or size differently is rejected too', () => {
+  const template = toTemplate(state)
+  const otherFont = { ...template, elements: [{ ...template.elements[2], font: 'Comic Sans' }] }
+  expect(() => parseTemplate(JSON.stringify(otherFont))).toThrow('polices de l\'éditeur')
+  expect(() => parseTemplate(JSON.stringify({ ...template, width: 500 }))).toThrow('1080 x 1920')
+  // auto format: the size is the one of the main image
+  const auto = { ...template, format: 'auto', width: 200, height: 100 }
+  expect(parseTemplate(JSON.stringify(auto))).toMatchObject({ format: 'auto', width: 200, height: 100 })
+  expect(() => parseTemplate(JSON.stringify({ ...auto, height: 300 }))).toThrow('200 x 100')
+})

@@ -1,4 +1,5 @@
 import type { PiniaPluginContext } from 'pinia'
+import { countLayers } from '../editor/layers'
 import type { useEditor } from '../stores/editor'
 import { track } from './index'
 
@@ -60,10 +61,7 @@ export function editorTracking({ store }: PiniaPluginContext) {
           return
         case 'exportTemplate':
         case 'openTemplate':
-          return track(name === 'exportTemplate' ? 'template_saved' : 'template_opened', {
-            image_count: editor.layers.filter((layer) => layer.type === 'image').length + (editor.main ? 1 : 0),
-            text_count: editor.layers.filter((layer) => layer.type === 'text').length,
-          })
+          return track(name === 'exportTemplate' ? 'template_saved' : 'template_opened', countLayers(editor.main, editor.layers))
         case 'remove':
           if (removedType) track('layer_deleted', { type: removedType })
       }

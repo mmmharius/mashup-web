@@ -18,6 +18,7 @@ export interface Events {
     format: Format
     width: number
     height: number
+    /** Images of the visual, main image included: same definition in every event. */
     image_count: number
     text_count: number
     /** Time elapsed since landing on the page: used for the time to first export. */

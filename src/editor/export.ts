@@ -1,5 +1,6 @@
 import { shallowRef } from 'vue'
 import { useEditor } from '../stores/editor'
+import { countLayers } from './layers'
 import { track } from '../tracking'
 import type { Scene } from './scene'
 
@@ -49,8 +50,7 @@ export async function exportVisual(mode: ExportMode): Promise<void> {
     mode,
     format: editor.format,
     ...editor.size,
-    image_count: editor.layers.filter((layer) => layer.type === 'image').length,
-    text_count: editor.layers.filter((layer) => layer.type === 'text').length,
+    ...countLayers(editor.main, editor.layers),
     seconds_since_arrival: Math.round(performance.now() / 1000),
   })
 }

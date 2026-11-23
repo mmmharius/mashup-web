@@ -39,6 +39,12 @@ export function layerName(layer: Layer): string {
   return layer.name || (layer.type === 'text' && layer.text.split('\n')[0]) || 'Sans nom'
 }
 
+/** How many images (main image included) and texts a visual holds: sent with the tracking events. */
+export function countLayers(main: ImageLayer | null, layers: Layer[]): { image_count: number; text_count: number } {
+  const texts = layers.filter((layer) => layer.type === 'text').length
+  return { image_count: layers.length - texts + (main ? 1 : 0), text_count: texts }
+}
+
 export const MAIN_ID = 'main'
 
 export function newId(): string {

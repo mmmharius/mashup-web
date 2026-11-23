@@ -7,8 +7,8 @@ const HELP = `Builds an image from an editor template.
 
   node cli.js <template.json> <output.png> [--image photo.jpg] [--text "New text"]
 
-  --image file          replaces the main image of the template
-  --text "..."          replaces the first text of the template
+  --image file          replaces the main image of the template (added as background when it has none)
+  --text "..."          replaces the first text of the template (added in the center when it has none)
   --image name=file     replaces the image of the layer called "name" (repeatable)
   --text name="..."     replaces the text of the layer called "name" (repeatable)`
 

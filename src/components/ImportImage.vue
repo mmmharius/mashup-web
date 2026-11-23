@@ -1,17 +1,24 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const emit = defineEmits<{ (event: 'file', file: File): void }>()
+/** What to do with the picked file. A rejection (unreadable image) is shown under the button. */
+const props = defineProps<{ load: (file: File) => Promise<void> }>()
 const error = ref('')
 
-function chosen(event: Event) {
+async function chosen(event: Event) {
   const field = event.target as HTMLInputElement
   const file = field.files?.[0]
   // reset so the same file can be picked again
   field.value = ''
   if (!file) return
   error.value = file.type.startsWith('image/') ? '' : 'Ce fichier n\'est pas une image.'
-  if (!error.value) emit('file', file)
+  if (error.value) return
+  try {
+    await props.load(file)
+  } catch (cause) {
+    // the type said "image" but the browser cannot decode it (damaged file, HEIC on a desktop browser)
+    error.value = (cause as Error).message
+  }
 }
 </script>
 

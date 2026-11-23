@@ -28,13 +28,13 @@ const editor = useEditor()
       </section>
       <section>
         <h2>Image principale</h2>
-        <ImportImage @file="editor.importMain">
+        <ImportImage :load="editor.importMain">
           {{ editor.main ? 'Remplacer l\'image' : 'Importer une image' }}
         </ImportImage>
       </section>
       <section>
         <h2>Ajouter</h2>
-        <ImportImage @file="editor.addImage">Image par-dessus</ImportImage>
+        <ImportImage :load="editor.addImage">Image par-dessus</ImportImage>
         <button class="add-text" @click="editor.addText()">Texte</button>
       </section>
       <section>
