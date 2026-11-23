@@ -5,4 +5,6 @@ export default defineConfig({
   // relative paths: the demo works under any sub-folder (GitHub Pages)
   base: './',
   plugins: [vue()],
+  // server tests run separately, with the Node test runner (server/package.json)
+  test: { include: ['src/**/*.test.ts'] },
 })

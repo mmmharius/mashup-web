@@ -1,0 +1,12 @@
+{
+  "name": "template-editor-server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "sharp": "^0.34.0"
+  }
+}
