@@ -5,18 +5,22 @@ import {
   type TextLayer,
   loadImage,
   MAIN_ID,
+  readFile,
   newId,
 } from '../editor/layers'
 import { coverScale, type Format, canvasSize } from '../editor/formats'
 import { loadFont, FONTS } from '../editor/fonts'
+import { parseTemplate, type Template, toTemplate } from '../editor/template'
 
 async function imageLayer(file: File, id: string): Promise<ImageLayer> {
-  const element = await loadImage(file)
+  const source = await readFile(file)
+  const element = await loadImage(source, file.name)
   return {
     id,
     type: 'image',
     name: file.name,
     element,
+    source,
     width: element.naturalWidth,
     height: element.naturalHeight,
     x: 0,
@@ -209,6 +213,31 @@ export const useEditor = defineStore('editor', {
       if (this.main?.id === id) this.resize(() => (this.main = null))
       this.layers = this.layers.filter((layer) => layer.id !== id)
       if (this.selectionId === id) this.selectionId = null
+    },
+
+    /** The visual described as JSON, ready to be saved then replayed by the server. */
+    exportTemplate(): Template {
+      return toTemplate(this)
+    },
+
+    /** Replaces the visual with the one from a template file. Nothing changes if the file is invalid. */
+    async openTemplate(file: File) {
+      const template = parseTemplate(await file.text())
+      const layers = await Promise.all(
+        template.elements.map(async ({ role, ...e }: Template['elements'][number] & { role?: string }): Promise<Layer> => {
+          const id = role === 'main' ? MAIN_ID : newId()
+          if (e.type === 'image') return { ...e, id, element: await loadImage(e.source, e.name) }
+          await loadFont(e.font)
+          const { background, ...text } = e
+          return { ...text, id, background: background ?? '#1c2030', backgroundEnabled: background !== null }
+        }),
+      )
+      this.remember()
+      this.format = template.format
+      this.background = template.background
+      this.main = (layers.find((layer) => layer.id === MAIN_ID) as ImageLayer | undefined) ?? null
+      this.layers = layers.filter((layer) => layer.id !== MAIN_ID)
+      this.selectionId = null
     },
 
     /** Copy of the current state. The images themselves are shared, only their settings are copied. */

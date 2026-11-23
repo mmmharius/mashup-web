@@ -2,6 +2,7 @@
 import FormatBar from './components/FormatBar.vue'
 import ExportButtons from './components/ExportButtons.vue'
 import HistoryButtons from './components/HistoryButtons.vue'
+import TemplateButtons from './components/TemplateButtons.vue'
 import ImportImage from './components/ImportImage.vue'
 import EventsPanel from './components/EventsPanel.vue'
 import LayersPanel from './components/LayersPanel.vue'
@@ -21,6 +22,10 @@ const editor = useEditor()
       <ExportButtons />
     </header>
     <aside class="column left">
+      <section>
+        <h2>Template</h2>
+        <TemplateButtons />
+      </section>
       <section>
         <h2>Image principale</h2>
         <ImportImage @file="editor.importMain">

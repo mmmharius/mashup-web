@@ -146,23 +146,19 @@ export function createScene(element: HTMLCanvasElement, editor: Editor, onView: 
     if (id) editor.updateText(id, { text: target.text })
   })
 
+  // the wheel zooms the view around the pointer (the visual itself does not change); with Shift it scrolls
   canvas.on('mouse:wheel', ({ e }) => {
     e.preventDefault()
-    const factor = e.deltaY < 0 ? 1.05 : 1 / 1.05
-    const layer = editor.selection
-    if (e.ctrlKey || e.metaKey) {
-      // Ctrl + wheel: zooms the view around the pointer, the visual itself does not change
-      const zoom = Math.min(fitZoom * 8, Math.max(fitZoom / 4, canvas.getZoom() * factor))
-      canvas.zoomToPoint(new Point(e.offsetX, e.offsetY), zoom)
-      onView(zoom)
-    } else if (layer) {
-      editor.update(layer.id, { scale: layer.scale * factor })
-    } else {
-      // nothing selected: the wheel scrolls the view
+    if (e.shiftKey) {
       const view = canvas.viewportTransform
-      canvas.setViewportTransform([view[0], 0, 0, view[3], view[4] - e.deltaX, view[5] - e.deltaY])
+      canvas.setViewportTransform([view[0], 0, 0, view[3], view[4] - e.deltaX - e.deltaY, view[5]])
       onView(view[0])
+      return
     }
+    const factor = e.deltaY < 0 ? 1.05 : 1 / 1.05
+    const zoom = Math.min(fitZoom * 8, Math.max(fitZoom / 4, canvas.getZoom() * factor))
+    canvas.zoomToPoint(new Point(e.offsetX, e.offsetY), zoom)
+    onView(zoom)
   })
 
   return {

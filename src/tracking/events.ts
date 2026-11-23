@@ -24,4 +24,7 @@ export interface Events {
     seconds_since_arrival: number
   }
   export_failed: { mode: ExportMode }
+  /** Saving a template means intending to reuse it: a signal of regular use. */
+  template_saved: { image_count: number; text_count: number }
+  template_opened: { image_count: number; text_count: number }
 }

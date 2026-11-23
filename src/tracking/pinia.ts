@@ -58,6 +58,12 @@ export function editorTracking({ store }: PiniaPluginContext) {
         case 'redo':
           if (editor.past.length > stepsBefore) track('history_used', { direction: 'redo' })
           return
+        case 'exportTemplate':
+        case 'openTemplate':
+          return track(name === 'exportTemplate' ? 'template_saved' : 'template_opened', {
+            image_count: editor.layers.filter((layer) => layer.type === 'image').length + (editor.main ? 1 : 0),
+            text_count: editor.layers.filter((layer) => layer.type === 'text').length,
+          })
         case 'remove':
           if (removedType) track('layer_deleted', { type: removedType })
       }

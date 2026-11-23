@@ -13,6 +13,8 @@ export interface ImageLayer extends Base {
   type: 'image'
   name: string
   element: HTMLImageElement
+  /** The original file as a data URL: this is what gets written into the template. */
+  source: string
   width: number
   height: number
 }
@@ -43,12 +45,22 @@ export function newId(): string {
   return crypto.randomUUID()
 }
 
-/** Loads an image file picked by the user. Rejects if it is not a readable image. */
-export function loadImage(file: File): Promise<HTMLImageElement> {
+/** Reads an image file picked by the user, as a data URL. */
+export function readFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error(`Fichier illisible : ${file.name}`))
+    reader.readAsDataURL(file)
+  })
+}
+
+/** Loads an image from its data URL. Rejects if it is not a readable image. */
+export function loadImage(source: string, name: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const element = new Image()
     element.onload = () => resolve(markRaw(element))
-    element.onerror = () => reject(new Error(`Image illisible : ${file.name}`))
-    element.src = URL.createObjectURL(file)
+    element.onerror = () => reject(new Error(`Image illisible : ${name}`))
+    element.src = source
   })
 }

@@ -5,7 +5,7 @@ import { useEditor } from './editor'
 
 function image(id: string, width: number, height: number): ImageLayer {
   const element = {} as HTMLImageElement
-  return { id, type: 'image', name: id, element, width, height, x: 0, y: 0, rotation: 0, scale: 1 }
+  return { id, type: 'image', name: id, element, source: '', width, height, x: 0, y: 0, rotation: 0, scale: 1 }
 }
 
 beforeEach(() => setActivePinia(createPinia()))
